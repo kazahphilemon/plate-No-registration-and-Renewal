@@ -10,7 +10,7 @@ const requireAuth = (req, res, next)=>{
 
         jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
             if (err) {
-                return res.status({
+                return res.status(400).json({
                     message: "not authorize"
                 });
             }
@@ -19,7 +19,7 @@ const requireAuth = (req, res, next)=>{
             next();
         });
     } else {
-        res.status({
+        res.status(401).json({
             message:" Unauthorized due to invalid credentials"
         });
     }

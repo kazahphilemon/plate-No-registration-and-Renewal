@@ -4,6 +4,7 @@ const path  = require('path')
 
 
 
+
 const deleteNewCar = async(req, res, next)=>{
     try{
 
@@ -20,6 +21,10 @@ const deleteNewCar = async(req, res, next)=>{
     
 
         const file = await newCar.findById(id)
+         if(JSON.stringify(file.user._id) !== JSON.stringify(req.user.id))
+         return res.status(400).json({
+            message:"Can't delete this car doc"
+        })
         // const files =(
         //     file.owner_passport_image,
         //     file.attestation_letter_image,
@@ -52,17 +57,14 @@ const deleteNewCar = async(req, res, next)=>{
         // })
       
 
-        const car = await newCar.findByIdAndDelete(id);
-        
-        
+         await newCar.findByIdAndDelete(id);
 
-
-        if (!car)
-        return res.status(400).json({
-            message: 'No car with such Id',
-            success: false
+    //     if (!car)
+    //     return res.status(400).json({
+    //         message: 'No car with such Id',
+    //         success: false
         
-    });
+    // });
         return res.status(200).json({
             success: true,
             message:"new_car document is deleted succesfully"
@@ -148,6 +150,11 @@ const updateNewCar = async(req, res, next)=>{
             success: false
         })
         const file = await newCar.findById(id)
+
+        if(JSON.stringify(file.user._id) !== JSON.stringify(req.user.id))
+        return res.status(400).json({
+            message: "can't update this user doc"
+        })
         // const files =(
         //     file.owner_passport_image,
         //     file.attestation_letter_image,
@@ -173,15 +180,7 @@ const updateNewCar = async(req, res, next)=>{
             fs.unlink(file_5)
         
    
-        
-
-            
-        // const files = ''
-        // if(req.file){
-        //    files = req.file.path
-        // //    console.log(req.files)
-        // }
-        console.log("Files: ", req.files.image_1[0].path)
+        // console.log("Files: ", req.files.image_1[0].path)
          const Car = await newCar.findByIdAndUpdate(id, 
             {VIN: VIN,
             license_id:license_id, 
@@ -192,15 +191,13 @@ const updateNewCar = async(req, res, next)=>{
             proof_of_ownership_image
         }, { new: true} );
 
-        
-
     
-        if (!Car)
-        return res.status(400).json({
-            message: 'No car with such Id',
-            success: false
+    //     if (!Car)
+    //     return res.status(400).json({
+    //         message: 'No car with such Id',
+    //         success: false
         
-    });
+    // });
     return res.status(200).json({
         success: true,
         car: Car,
@@ -211,10 +208,71 @@ const updateNewCar = async(req, res, next)=>{
         console.log(err.message)
     }
 }
+
+const userSingleNewCar = async(req, res, next)=>{
+    try{
+        const id = req.params.id
+
+        if ( id < 24 || id > 24)
+        return res.status(400).json({
+            message:"invalid password"
+        })
+
+    const singleUser = await newCar.findById(id)
+    if(JSON.stringify(singleUser.user._id) !== JSON.stringify(req.user.id))
+    return res.status(400).json({
+        message:"can't access the car doc of another user"
+    })
+
+    if(!singleUser)
+    return res.status(400).json({
+        message:"No old car with such Id"
+    })
+
+    return res.status(201).json({
+        sucess: true,
+        car: singleUser
+    })
+
+
+    }catch (err){
+        console.log(err.message)
+    }
+}
+
+const singleUserAllNewCar = async(req, res, next)=>{
+    try{
+        const id = req.params.id
+
+        if ( id < 24 || id > 24)
+        return res.status(400).json({
+            message:"invalid password"
+        })
+
+    const singleUser = await newCar.find({user:req.user.id})
+
+    if(!singleUser)
+    return res.status(400).json({
+        message:"No old car with such Id"
+    })
+
+    return res.status(201).json({
+        sucess: true,
+        car: singleUser
+    })
+
+
+    }catch (err){
+        console.log(err.message)
+    }
+}
+ 
  
 
 module.exports ={
     uploadNewCar,
     deleteNewCar,
-    updateNewCar
+    updateNewCar,
+    userSingleNewCar,
+    singleUserAllNewCar
 }

@@ -16,11 +16,6 @@ var Storage = multer.diskStorage({
     storage: Storage,
     fileFilter: function(req, file, callback){
 
-        // let files = fs.readdir('uploads/');
-        // if(files.includes(file.originalname)){
-        //     fs.unlink('pwrite the pathath'+ file.originalname);
-        // }
-
         if(file.mimetype == "image/png" || file.mimetype == "image/jpg" || file.mimetype == "image/jpeg"){
             callback(null, true)
         }else{

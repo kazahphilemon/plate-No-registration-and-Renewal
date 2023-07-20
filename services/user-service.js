@@ -5,6 +5,9 @@ const jwt = require('jsonwebtoken')
 const User = require('../models/User')
 const dotenv = require('dotenv')
 const bcrypt = require("bcrypt")
+const Mailgen = require('mailgen')
+const Token = require('../models/token')
+const token = require('../models/token')
 
 dotenv.config()
 
@@ -210,7 +213,7 @@ const sign_in = async(req, res, next)=>{
         // const decoded = await jwt.verify (user.password, password)
         
         if (!(findUser && (await bcrypt.compare(password, findUser.password)))){
-            res.status(400).json({
+            return res.status(400).json({
                 success: false,
                 error: 'invaild email or password'
             })
@@ -226,8 +229,8 @@ const sign_in = async(req, res, next)=>{
         // findUser.Token = Token,
         findUser.password = "hidden"
 
-    res.cookie("jwt", Token, {httpOnly: true, maxAge: 5 * 60 * 60 * 1000})   
-    res.status(201).json({
+    // res.cookie("jwt", Token, {httpOnly: true, maxAge: 5 * 60 * 60 * 1000})   
+    return res.status(201).json({
         success: true,
         message: "login successfully",
         User: ({Access_token:Token})
@@ -237,7 +240,7 @@ const sign_in = async(req, res, next)=>{
     }       
 }
 
-const forgot_password = async(req, res, next)=>{
+const forgot_password = async(req, res, next)=>{ 
     try{
         const{ email } = req.body
         
@@ -248,25 +251,37 @@ const forgot_password = async(req, res, next)=>{
        
         
         if (!find_user ){
-            res.status(400).json({
+            return res.status(400).json({
                 success: false,
                 error: 'invaild email'
             })
         
     } 
 
+   
+
     const Secret =  process.env.JWT_SECRET + find_user.password
-    const payload = {
-        id: find_user._id, 
-        email: find_user.email
+    const payload ={
+        id: User._id,
+        email: User.email
     }
+    
     const Access_token = await jwt.sign(payload, Secret,
         {
             expiresIn: "15m"
         })
+    // const finduser = await token.findById(id)
+    const hash =  await bcrypt.hash(Access_token, 10)
+    const userToken = new Token({
+            userId:find_user._id,
+            token: hash
+    })
+        await userToken.save()
+        
+    const link = `${process.env.CLIENT_URL}/reset-password/${find_user._id}/${Access_token}`
     
     
-        const transporter = nodemailer.createTransport({
+        const config = ({
             host: 'smtp.ethereal.email',
             port: 587,
             secure: false,
@@ -275,29 +290,35 @@ const forgot_password = async(req, res, next)=>{
                 pass: 'U6QpfqzTPbvKgB2XMj'                
             }
             });
-            const info = await transporter.sendMail({
+            transporter = nodemailer.createTransport(config)
+            
+            const info ={
                 from: 'ethereal <info@ethereal.email>',
                 to: email,
                 subject: 'Account reset_password',
-                text:`<h2> Please click on the given link to reset_password <h2>
-                    link:${process.env.CLIENT_URL}/reset-password/${Access_token}
-                 `,
+                html:`<h2> Please click on the given link to reset_password <h2>
+                link:${process.env.CLIENT_URL}/reset-password/${find_user._id}/${Access_token}`,
                  attachments:[{
                     filename: "download-1.png",
                     path:'./download-1.png',
                     cid: 'unique@ethereal.email'
                  }]
-            })
-        
+
+                 
+            }
+           
+            console.log(link)
+            transporter.sendMail(info)
 
 
     // const link =`127.0.0.1:3000/reset-password/${find_user._id}/${Access_token}`
     // console.log(info)
 
     
-    res.status(201).json({
+   return res.status(201).json({
         success: true,
         message: "password reset link has been sent to your email",
+        token: Access_token
         // data: info
     });
     }catch(err){
@@ -305,52 +326,79 @@ const forgot_password = async(req, res, next)=>{
     }       
 }
 
-const reset_password = async(req, res, next)=>{
+
+
+const resetPassword = async(req, res, next)=>{
     try{
-        const{ id, Access_token } = req.params
+        const id = req.params.id
+        
         const { password, confirm_password } = req.body
 
-        const find_id = await User.findOne({id})
 
-       
-        
-        if (!find_id ){
-            res.status(400).json({
+        const user = await User.findById(id)
+        // console.log(user)
+
+        if (!user ){
+           return res.status(400).json({
                 success: false,
                 error: 'invaild Id...'
             })
+           
+        } 
         
-    } 
 
-    const Secret =  process.env.JWT_SECRET + find_user.password
-    
-    const payload = await jwt.verify(Access_token, Secret)
+        // console.log(user)
+        
+      
 
-    if(password !== confirm_password)
-    return res.status(400).json({
-        message: "password not same as confirm_password"
-    })
-
-    const user = await User.findOne({payload})
-
-    user.password = password
-    
-
-        // find_user.Token = Token,
+        const findtoken = await Token.findOne({tokens:req.params.token})
+        //  console.log(findtoken) 
+        
+        if (!findtoken ){
+           return res.status(400).json({
+                success: false,
+                error: 'invaild token...'
+            })
+            
+        }
+        
+        
+        if(password !== confirm_password){
+           return res.status(400).json({
+            message:"password different confirm_password"
+           })
+           
+        }
+        
        
-  
-    res.status(201).json({
-        success: true,
-        message: "password reset link has been sent to your email",
-        User: user
-    });
+        
+        const hashedPassword = await bcrypt.hash(password, 10)
+          const repeatPassword = await bcrypt.hash(confirm_password, 10)
+
+
+          
+         if (User._id === findtoken.userId){
+                
+                user.password = hashedPassword
+                user.confirm_password = repeatPassword
+      
+
+                await user.save();
+      
+         
+            return res.status(201).json({
+                success: true,
+                message: "password updated",
+                user: user
+            });
+        }
+        
+        
+     
     }catch(err){
         console.log(err)
     }       
 }
-
-
-
 
 
 
@@ -362,5 +410,5 @@ module.exports = {
     register,
     sign_in,
     forgot_password,
-    reset_password
+    resetPassword
 }

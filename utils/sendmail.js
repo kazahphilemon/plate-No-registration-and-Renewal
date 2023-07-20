@@ -38,7 +38,8 @@ const mail = async(req, res, next)=>{
                         Fee:"45,000"
                     }
                 ]
-            }
+            },
+            outro: "Looking forward to do more business with you"
         }   
     }
     const mail = mailGenerator.generate(response)

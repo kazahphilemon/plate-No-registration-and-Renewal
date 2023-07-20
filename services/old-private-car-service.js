@@ -4,9 +4,6 @@ const fs = require ("fs/promises")
 
 const deleteOldPrivateCar = async(req, res, next)=>{
     try{
-
-    
-
         const id = req.params.id
 
         
@@ -18,6 +15,11 @@ const deleteOldPrivateCar = async(req, res, next)=>{
     
 
         const file = await oldPrivateCar.findById(id)
+        if(JSON.stringify(file.user._id) !== JSON.stringify(req.user.id))
+        return res.status(400).json({
+            message: "can't delete this user doc"
+        })
+
         // const files =(
         //     file.car_license_image,
         //     file.roadworthiness_image,
@@ -30,31 +32,17 @@ const deleteOldPrivateCar = async(req, res, next)=>{
         fs.unlink(file_1)
         fs.unlink(file_2)
         fs.unlink(file_3)
-        // fs.unlink(me, (err,) => {
-
-        //     if (err) {
-        //       res.status(500).send({
-        //         message: "Could not delete the file. " + err,
-        //       });
-        //     }
-        
-        //     res.status(200).send({
-        //       message: "File is deleted.",
-        //     });
-        // })
+       
       
 
-        const car = await oldPrivateCar.findByIdAndDelete(id);
-        
-        
+        await oldPrivateCar.findByIdAndDelete(id);
 
-
-        if (!car)
-        return res.status(400).json({
-            message: 'No car with such Id',
-            success: false
+    //     if (!car)
+    //     return res.status(400).json({
+    //         message: 'No car with such Id',
+    //         success: false
         
-    });
+    // });
     return res.status(200).json({
         success: true,
         message:"old_private_car document has been delete succesfully"
@@ -69,7 +57,7 @@ const uploadOldPrivateCar = async(req, res, next) =>{
     try{
     const { license_id, roadworthiness_id, VIN }= req.body
         
-    findVIN = await newCar.findOne({VIN})
+    findVIN = await oldPrivateCar.findOne({VIN})
 
     if(findVIN)
     res.status(400).json({
@@ -115,10 +103,7 @@ const uploadOldPrivateCar = async(req, res, next) =>{
         })
     }
     catch (err){
-        res.status(400).json({
-            message:"some fields are missing"
-        })
-        console.log("some fields are missing")
+        console.log(err)
     }
 }
 
@@ -139,21 +124,23 @@ const updateOldPrivateCar = async(req, res, next)=>{
             success: false
         })
         const file = await oldPrivateCar.findById(id)
+        if(JSON.stringify(file.user._id) !== JSON.stringify(req.user.id))
+        return res.status(400).json({
+            message: "can't update this user doc"
+        })
         
 
-        // const file_1 = file.image_1
-        // const file_2 = file.attestation_letter_image
-        // const file_3= file.purchase_receipt_image
-        // const file_4 = file.delivery_note_image
-        // const file_5 = file.proof_of_ownership_image
+        const file_1 = file.car_license_image
+        const file_2 = file.roadworthiness_image
+        const file_3= file.insurance_image
+        
         
         
            
-            // await fs.link(file_1)
-            // fs.link(file_2)
-            // fs.link(file_3)
-            // fs.link(file_4)
-            // fs.link(file_5)
+            fs.unlink(file_1)
+            fs.unlink(file_2)
+            fs.unlink(file_3)
+            
         
    
         
@@ -177,17 +164,75 @@ const updateOldPrivateCar = async(req, res, next)=>{
         
 
     
-        if (!Car)
-        return res.status(400).json({
-            message: 'No car with such Id',
-            success: false
+    //     if (!Car)
+    //     return res.status(400).json({
+    //         message: 'No car with such Id',
+    //         success: false
         
-    });
+    // });
     return res.status(200).json({
         success: true,
         car: Car,
         message:"newCar updated succesfully"
     })
+
+    }catch (err){
+        console.log(err)
+    }
+}
+
+const userSingleOldPrivateCar = async(req, res, next)=>{
+    try{
+        const id = req.params.id
+
+        if ( id < 24 || id > 24)
+        return res.status(400).json({
+            message:"invalid password"
+        })
+
+    const singleUser = await oldPrivateCar.findById(id)
+    if(JSON.stringify(singleUser.user._id) !== JSON.stringify(req.user.id))
+    return res.status(400).json({
+        message:"can't access the car doc of another user"
+    })
+
+    if(!singleUser)
+    return res.status(400).json({
+        message:"No old car with such Id"
+    })
+
+    return res.status(201).json({
+        sucess: true,
+        car: singleUser
+    })
+
+
+    }catch (err){
+        console.log(err.message)
+    }
+}
+
+const singleUserAllOldPrivateCar = async(req, res, next)=>{
+    try{
+        const id = req.params.id
+
+        if ( id < 24 || id > 24)
+        return res.status(400).json({
+            message:"invalid password"
+        })
+
+    const singleUser = await oldPrivateCar.find({user:req.user.id})
+
+    if(!singleUser)
+    return res.status(400).json({
+        message:"No old car with such Id"
+    })
+
+    return res.status(201).json({
+        sucess: true,
+        car: singleUser
+    })
+
 
     }catch (err){
         console.log(err.message)
@@ -198,6 +243,7 @@ const updateOldPrivateCar = async(req, res, next)=>{
 module.exports ={
     uploadOldPrivateCar,
     deleteOldPrivateCar,
-    updateOldPrivateCar
-
+    updateOldPrivateCar,
+    userSingleOldPrivateCar,
+    singleUserAllOldPrivateCar
 }

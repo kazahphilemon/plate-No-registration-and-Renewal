@@ -67,6 +67,14 @@ router.put("/update/ownerprofile/:id", requireAuth, upload.single("identity_card
 // router.put("/updatenewcar/:id", requireAuth,  newCarController.updateNewCar)
 // router.post("/oldcomcar", requireAuth, upload.array("files"),  ownerController.uploadOwnerDetails )
 
+router.get("/singlenewcar/:id", requireAuth, newCarService.userSingleNewCar)
+router.get("/singleoldprivatecar/:id", requireAuth, oldPrivateCarService.userSingleOldPrivateCar)
+router.get("/singleoldcommercialcar/:id", requireAuth, oldCommercialCarService.userSingleOldCommercialCar)
+
+router.get("/singleuserallnewcar/", requireAuth, newCarService.singleUserAllNewCar)
+router.get("/singleuseralloldprivatecar/", requireAuth, oldPrivateCarService.singleUserAllOldPrivateCar)
+router.get("/singleuserallcommercialcar/", requireAuth, oldCommercialCarService.singleUserAllOldCommercialCar)
+
 
 
 

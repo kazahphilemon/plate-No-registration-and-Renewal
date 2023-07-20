@@ -24,12 +24,11 @@ const UserModel = new mongoose.Schema({
     Token:{
         type: String,
         default: null
-    },
-    // resetLink:{
-    //     data: String,
-    //     default: ''
-    // }
+    }
 
-},{timestamps:true})
+})
 
 module.exports = mongoose.model('User', UserModel)
+
+
+

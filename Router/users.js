@@ -10,7 +10,8 @@ const router = express.Router()
 router.post("/create", userController.registration)
 router.post("/login", userController.login)
 router.post("/forgot_password", userService.forgot_password)
-router.post("/reset_password/token/:id", userService.reset_password)
+// router.get("/reset-password/:id/:Access_token", userService.reset_password)
+router.post("/reset-password/:id/:Access_token", userService.resetPassword)
 router.post("/sendmail", sendmail.mail)
 
 
