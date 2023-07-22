@@ -24,6 +24,10 @@ const UserModel = new mongoose.Schema({
     Token:{
         type: String,
         default: null
+    },
+    date: { 
+        type: Date, 
+        default: Date.now 
     }
 
 })

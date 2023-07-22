@@ -7,7 +7,8 @@ const dotenv = require('dotenv')
 const bcrypt = require("bcrypt")
 const Mailgen = require('mailgen')
 const Token = require('../models/token')
-const token = require('../models/token')
+const crypto = require('crypto')
+
 
 dotenv.config()
 
@@ -245,12 +246,13 @@ const forgot_password = async(req, res, next)=>{
         const{ email } = req.body
         
         
+        
 
-        const find_user = await User.findOne({email})
-
+        const user = await User.findOne({email})
+       
        
         
-        if (!find_user ){
+        if (!user ){
             return res.status(400).json({
                 success: false,
                 error: 'invaild email'
@@ -258,12 +260,13 @@ const forgot_password = async(req, res, next)=>{
         
     } 
 
-   
+    const token = await Token.findOne({userId: user._id})
+    // let resetToken = crypto.randomBytes(32).toString("hex")
 
-    const Secret =  process.env.JWT_SECRET + find_user.password
+    const Secret =  process.env.JWT_SECRET + user.password
     const payload ={
-        id: User._id,
-        email: User.email
+        id: user.id,
+        email: user.email
     }
     
     const Access_token = await jwt.sign(payload, Secret,
@@ -271,14 +274,14 @@ const forgot_password = async(req, res, next)=>{
             expiresIn: "15m"
         })
     // const finduser = await token.findById(id)
-    const hash =  await bcrypt.hash(Access_token, 10)
+    // const hashed =  await bcrypt.hash(resetToken, 10)
     const userToken = new Token({
-            userId:find_user._id,
-            token: hash
+            userId: user._id,
+            token: Access_token
     })
         await userToken.save()
         
-    const link = `${process.env.CLIENT_URL}/reset-password/${find_user._id}/${Access_token}`
+    const link = `${process.env.CLIENT_URL}/reset-password/${user._id}/${Access_token}`
     
     
         const config = ({
@@ -297,7 +300,7 @@ const forgot_password = async(req, res, next)=>{
                 to: email,
                 subject: 'Account reset_password',
                 html:`<h2> Please click on the given link to reset_password <h2>
-                link:${process.env.CLIENT_URL}/reset-password/${find_user._id}/${Access_token}`,
+                link:${process.env.CLIENT_URL}/reset-password/${user._id}/${Access_token}`,
                  attachments:[{
                     filename: "download-1.png",
                     path:'./download-1.png',
@@ -330,12 +333,13 @@ const forgot_password = async(req, res, next)=>{
 
 const resetPassword = async(req, res, next)=>{
     try{
-        const id = req.params.id
         
+        
+        const token = req.params.token
         const { password, confirm_password } = req.body
 
 
-        const user = await User.findById(id)
+        const user = await User.findById(req.params.userId)
         // console.log(user)
 
         if (!user ){
@@ -344,14 +348,18 @@ const resetPassword = async(req, res, next)=>{
                 error: 'invaild Id...'
             })
            
-        } 
-        
+        }
 
-        // console.log(user)
-        
-      
+        // const token = await Token.findOne({
+        //     userId: user._id,
+        //     token: req.params.token,
+        // });
 
-        const findtoken = await Token.findOne({tokens:req.params.token})
+        // console.log(req.params.token)
+        
+        
+        
+        const findtoken = await Token.findOne({token})
         //  console.log(findtoken) 
         
         if (!findtoken ){
@@ -373,26 +381,32 @@ const resetPassword = async(req, res, next)=>{
        
         
         const hashedPassword = await bcrypt.hash(password, 10)
-          const repeatPassword = await bcrypt.hash(confirm_password, 10)
+        const repeatPassword = await bcrypt.hash(confirm_password, 10)
 
 
-          
-         if (User._id === findtoken.userId){
-                
+            // console.log("userId: ",user._id);
+            // console.log("tokenId: ",findtoken.userId);
+            if (user._id.toString() == findtoken.userId.toString()) {
+            
                 user.password = hashedPassword
                 user.confirm_password = repeatPassword
       
 
                 await user.save();
-      
+            
          
             return res.status(201).json({
                 success: true,
                 message: "password updated",
                 user: user
             });
-        }
         
+            }else{
+                return res.status(401).json({
+                    success: false,
+                    message: "invalid token"
+                })
+            }
         
      
     }catch(err){
