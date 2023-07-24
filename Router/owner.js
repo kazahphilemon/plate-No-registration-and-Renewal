@@ -36,6 +36,7 @@ router.post("/oldprivate", requireAuth, upload.fields([
 ]), oldPrivateCarController.uploadOldPrivate)
 
 router.post("/upload", requireAuth, upload.single("identity_card"),  ownerController.uploadOwnerProfile)
+
 router.delete("/delete/newcar/:id", requireAuth,  newCarService.deleteNewCar)
 router.delete("/delete/ownerprofile/:id", requireAuth,  ownerController.deleteOwnerProfile)
 router.delete("/delete/oldprivate/:id", requireAuth,  oldPrivateCarService.deleteOldPrivateCar)
@@ -63,14 +64,16 @@ router.put("/update/oldprivate/:id", requireAuth, upload.fields([
     {name:"image_3", maxCount: 1}
 ]), oldPrivateCarController.updateOldPrivate)
 
-router.put("/update/ownerprofile/:id", requireAuth, upload.single("identity_card"),  ownerController.uploadOwnerProfile)
+router.put("/update/ownerprofile/:id", requireAuth, upload.single("identity_card"),  ownerController.updateOwnerProfile)
 // router.put("/updatenewcar/:id", requireAuth,  newCarController.updateNewCar)
 // router.post("/oldcomcar", requireAuth, upload.array("files"),  ownerController.uploadOwnerDetails )
 
+router.get("/singleregisteredprofile/:id", requireAuth, ownerController.singleRegisteredProfile)
 router.get("/singlenewcar/:id", requireAuth, newCarService.userSingleNewCar)
 router.get("/singleoldprivatecar/:id", requireAuth, oldPrivateCarService.userSingleOldPrivateCar)
 router.get("/singleoldcommercialcar/:id", requireAuth, oldCommercialCarService.userSingleOldCommercialCar)
 
+router.get("/singleuserallprofile/", requireAuth, ownerController.singleUserAllProfile)
 router.get("/singleuserallnewcar/", requireAuth, newCarService.singleUserAllNewCar)
 router.get("/singleuseralloldprivatecar/", requireAuth, oldPrivateCarService.singleUserAllOldPrivateCar)
 router.get("/singleuserallcommercialcar/", requireAuth, oldCommercialCarService.singleUserAllOldCommercialCar)

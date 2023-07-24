@@ -250,6 +250,7 @@ const singleUserAllNewCar = async(req, res, next)=>{
         })
 
     const singleUser = await newCar.find({user:req.user.id})
+   
 
     if(!singleUser)
     return res.status(400).json({

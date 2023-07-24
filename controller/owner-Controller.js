@@ -13,7 +13,13 @@ const deleteOwnerProfile = async(req, res, next)=>{
         })
     
 
-        const file = await Owner.findById(id)
+        const file = await Owner.findOne({_id: id})
+        if(JSON.stringify(file.user._id) !== JSON.stringify(req.user.id)){
+            return res.status(401).json({
+                message:"can't update this profile"
+            })
+        }
+        // console.log(file)
         const files =(
             file.identity_card
         )
@@ -108,7 +114,7 @@ const updateOwnerProfile = async(req, res, next)=>{
     try{
 
         const id  = req.params.id
-        const { identity_number, first_name, last_name, date_of_birth, age, email, gender, local_government, state } = req.body
+        const { identity_number, first_name, last_name, date_of_birth, age, email, gender, local_government, state} = req.body
         
         
         const  identity_card  = req.file.path
@@ -119,54 +125,45 @@ const updateOwnerProfile = async(req, res, next)=>{
             message: 'invaild Id',
             success: false
         })
-        const file = await Owner.findById(id)
-        // const files =(
-        //     file.owner_passport_image,
-        //     file.attestation_letter_image,
-        //     file.purchase_receipt_image,
-        //     file.delivery_note_image,
-        //     file.proof_of_ownership_image
-        // )
+        const file = await Owner.findOne({_id: id})
+        if(JSON.stringify(file.user._id) !== JSON.stringify(req.user.id)){
+            return res.status(401).json({
+                message:"can't update this profile"
+            })
+        }
+        // console.log(file)
         
-        // const directoryPath = path.resolve(files)
+       
 
-        // const file_1 = file.image_1
+        const file_1 = file.identity_card
         // const file_2 = file.attestation_letter_image
-        // const file_3= file.purchase_receipt_image
-        // const file_4 = file.delivery_note_image
-        // const file_5 = file.proof_of_ownership_image
+       
         
         
            
-            // await fs.link(file_1)
+            await fs.unlink(file_1)
             // fs.link(file_2)
-            // fs.link(file_3)
-            // fs.link(file_4)
-            // fs.link(file_5)
-        
+           
    
         
 
             
-        // const files = ''
-        // if(req.file){
-        //    files = req.file.path
-        // //    console.log(req.files)
-        // }
+        
         console.log("Files: ", req.file.path)
          const Car = await Owner.findByIdAndUpdate(id, 
             {
                 identity_number,
-                first_name, 
-                last_name, 
-                date_of_birth, 
-                age, 
-                email, 
-                gender, 
-                local_government, 
+                first_name,
+                last_name,
+                date_of_birth,
+                age,
+                email,
+                gender,
+                local_government,
                 state,
                 identity_card
-        }, { new: true} );
+
+            }, { new: true} );
 
         
 
@@ -187,9 +184,69 @@ const updateOwnerProfile = async(req, res, next)=>{
         console.log(err.message)
     }
 }
+const singleRegisteredProfile = async(req, res, next)=>{
+    try{
+        const id = req.params.id
+
+        if ( id < 24 || id > 24)
+        return res.status(400).json({
+            message:"invalid password"
+        })
+
+    const singleProfile = await Owner.findById(id)
+    if(JSON.stringify(singleProfile.user._id) !== JSON.stringify(req.user.id))
+    return res.status(400).json({
+        message:"can't access another user profile"
+    })
+
+    if(!singleProfile)
+    return res.status(400).json({
+        message:"No profile with such Id"
+    })
+
+    return res.status(201).json({
+        sucess: true,
+        profile: singleProfile
+    })
+
+
+    }catch (err){
+        console.log(err.message)
+    }
+}
+
+const singleUserAllProfile= async(req, res, next)=>{
+    try{
+        const id = req.params.id
+
+        if ( id < 24 || id > 24)
+        return res.status(400).json({
+            message:"invalid password"
+        })
+
+    const allProfile = await Owner.find({user:req.user.id})
+
+    if(!allProfile)
+    return res.status(400).json({
+        message:"No old car with such Id"
+    })
+
+    return res.status(201).json({
+        sucess: true,
+        profile: allProfile
+    })
+
+
+    }catch (err){
+        console.log(err.message)
+    }
+}
+ 
 
 module.exports ={
     uploadOwnerProfile,
     deleteOwnerProfile,
-    updateOwnerProfile
+    updateOwnerProfile,
+    singleRegisteredProfile,
+    singleUserAllProfile
 }
